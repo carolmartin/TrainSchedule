@@ -1,53 +1,21 @@
 // Initialize Firebase
+
+// Initialize Firebase
 var config = {
-    apiKey: "AIzaSyAL7s3MHTYEbDtftSU8cumnHZ3F59nOYtk",
-    authDomain: "carolssuperawesomeproject.firebaseapp.com",
-    databaseURL: "https://carolssuperawesomeproject.firebaseio.com",
-    projectId: "carolssuperawesomeproject",
-    storageBucket: "carolssuperawesomeproject.appspot.com",
-    messagingSenderId: "802458806033"
+    apiKey: "AIzaSyCNv54OmFV5t3hzF8WQH7YuM0VKyCNHAFs",
+    authDomain: "trainschedule-1ca26.firebaseapp.com",
+    databaseURL: "https://trainschedule-1ca26.firebaseio.com",
+    projectId: "trainschedule-1ca26",
+    storageBucket: "trainschedule-1ca26.appspot.com",
+    messagingSenderId: "909343682622"
 };
 firebase.initializeApp(config);
 
 
-// Assume the following situations.
-
-// (TEST 1)
-// First Train of the Day is 3:00 AM
-// Assume Train comes every 3 minutes.
-// Assume the current time is 3:16 AM....
-// What time would the next train be...? (Use your brain first)
-// It would be 3:18 -- 2 minutes away
-
-// (TEST 2)
-// First Train of the Day is 3:00 AM
-// Assume Train comes every 7 minutes.
-// Assume the current time is 3:16 AM....
-// What time would the next train be...? (Use your brain first)
-// It would be 3:21 -- 5 minutes away
+var tFrequency = 0;
 
 
-// ==========================================================
-
-// Solved Mathematically
-// Test case 1:
-// 16 - 00 = 16
-// 16 % 3 = 1 (Modulus is the remainder)
-// 3 - 1 = 2 minutes away
-// 2 + 3:16 = 3:18
-
-// Solved Mathematically
-// Test case 2:
-// 16 - 00 = 16
-// 16 % 7 = 2 (Modulus is the remainder)
-// 7 - 2 = 5 minutes away
-// 5 + 3:16 = 3:21
-
-// Assumptions
-var tFrequency = 3;
-
-// Time is 3:30 AM
-var firstTime = "03:30";
+var firstTime;
 
 var tRemainder = 0;
 var nextTrain;
@@ -87,24 +55,15 @@ $(".btn-primary").on("click", function (e) {
     tFrequency = $("#frequency").val().trim();
     console.log("frequency is " + tFrequency);
     firstTime = $("#firstTime").val().trim();
-    
+
     console.log("first time is " + firstTime);
 
     // Call funciton to calculate the arrival of the next train and minute away
     getTrainArrival(tFrequency, firstTime);
     //  append the next time to the row we are formating to load onto the page
-    row.append("<td>" + moment(nextTrain).format("hh:mm") + "</td>");
+    row.append("<td>" + moment(nextTrain).format("hh:mm a") + "</td>");
     row.append("<td>" + tMinutesTillTrain + "</td>");
 
-    // var dt2 = $("#startDate").val();
-    // var res = dt2.split("/");
-    // var startMonth = parseInt(res[0]);
-    // var startYear = parseInt(res[2]);
-    // var diffMonths = 12* year + month - (startMonth + startYear * 12);
-    // console.log(diffMonths);
-    // row.append("<td>" + diffMonths + "</td>");
-    // row.append("<td>" + $("#monthlyRate").val().trim() + "</td>");
-    // row.append("<td>" + diffMonths * $("#monthlyRate").val() + "</td>");
     $("tbody").append(row);
 
     var database = firebase.database();
@@ -118,7 +77,7 @@ $(".btn-primary").on("click", function (e) {
 
 });
 
-function getTrainArrival(tFrequency,firstTime){
+function getTrainArrival(tFrequency, firstTime) {
 
     // Take the frequency and first time schedule to detemine minutes until next arrival and arrival time
 
@@ -144,5 +103,48 @@ function getTrainArrival(tFrequency,firstTime){
 
     // Next Train
     nextTrain = moment().add(tMinutesTillTrain, "minutes");
-    console.log("ARRIVAL TIME: " + moment(nextTrain).format("hh:mm"));
+    console.log("ARRIVAL TIME: " + moment(nextTrain).format("hh:mm a"));
 }
+
+loadTrainSchedule();
+
+function loadTrainSchedule() {
+    // Loop through users in order with the forEach() method. The callback
+    // provided to forEach() will be called synchronously with a DataSnapshot
+    // for each child:
+    var query = firebase.database().ref().orderByKey();
+    // var query = firebase.database().ref().orderByKey(trainName);
+    query.once("value")
+        .then(function (snapshot) {
+            snapshot.forEach(function (childSnapshot) {
+                
+                var key = childSnapshot.key;
+                var row = $("<tr>");
+
+                // childData will be the actual contents of the child
+                var childData = childSnapshot.val();
+                console.log(childData);
+
+                // format data onto HTML page
+
+                row.append("<td>" + childData.trainName + "</td>");
+                row.append("<td>" + childData.destination + "</td>");
+                row.append("<td>" + childData.frequency + "</td>");
+                tFrequency = childData.frequency
+                console.log("frequency is " + tFrequency);
+
+                firstTime = childData.firstTime;
+            
+                console.log("first time is " + firstTime);
+            
+                // Call function to calculate the arrival of the next train and minute away
+                getTrainArrival(tFrequency, firstTime);
+                //  append the next time to the row we are formating to load onto the page
+                row.append("<td>" + moment(nextTrain).format("hh:mm a") + "</td>");
+                row.append("<td>" + tMinutesTillTrain + "</td>");
+
+                $("tbody").append(row);
+
+            });
+        });
+};
